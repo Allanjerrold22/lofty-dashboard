@@ -6,7 +6,7 @@ import TopBar from "./TopBar";
 import AssistantPanel from "./assistant/AssistantPanel";
 import { useAssistantUi } from "@/lib/assistant-ui";
 
-const PANEL_WIDTH = 420; // px — keep in sync with AssistantDock
+const PANEL_WIDTH = 320; // px — keep in sync with AssistantDock
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

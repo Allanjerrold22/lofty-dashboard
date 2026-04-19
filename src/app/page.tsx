@@ -14,19 +14,25 @@ export default function Dashboard() {
     <div className="max-w-[1280px] mx-auto px-5 sm:px-6 py-6 space-y-6">
       <DashboardHeader />
 
-      <MorningBriefingHero />
+      {/* Row 1: col-1 = Morning Brief + KPI Strip stacked, col-2 = Appointments */}
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
+        <div className="space-y-4">
+          <MorningBriefingHero />
+          <KpiStrip />
+        </div>
+        <AppointmentsCard />
+      </section>
 
-      <KpiStrip />
-
+      {/* Row 2: Charts */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <PipelineFunnelChart />
         <LeadSourceChart />
         <WeeklyActivityChart />
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* Row 3: Cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TasksCard />
-        <AppointmentsCard />
         <NewLeadsCard />
         <TransactionsCard />
       </section>

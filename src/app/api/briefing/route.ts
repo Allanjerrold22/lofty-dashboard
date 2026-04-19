@@ -12,7 +12,7 @@ export type Briefing = {
 
 export async function GET() {
   const hour = new Date().getHours();
-  const part = hour < 5 ? "night" : hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const part = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
 
   const briefing: Briefing = {
     greeting: `Good ${part}, James`,
