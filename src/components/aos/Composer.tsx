@@ -3,21 +3,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, Microphone, Stop } from "@phosphor-icons/react";
 
-// SpeechRecognition browser shim
-type SR = typeof window extends undefined
-  ? never
-  : (typeof window & {
-      SpeechRecognition?: new () => SpeechRecognition;
-      webkitSpeechRecognition?: new () => SpeechRecognition;
-    })["SpeechRecognition" | "webkitSpeechRecognition"];
-
-function getSR(): SR | null {
-  if (typeof window === "undefined") return null;
-  const w = window as typeof window & {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
+// Minimal types — DOM lib SpeechRecognition is not always in TS scope for Next builds
+type SpeechRecognitionResultEventLike = {
+  resultIndex: number;
+  results: {
+    length: number;
+    [i: number]: { isFinal: boolean; 0: { transcript: string } };
   };
-  return (w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null) as SR | null;
+};
+
+type SpeechRecognitionCtor = new () => {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  onresult: ((e: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: ((e: Event) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SRInstance = InstanceType<SpeechRecognitionCtor>;
+
+function getSR(): SpeechRecognitionCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as Window & {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
 interface Props {
@@ -34,7 +49,7 @@ export default function Composer({ busy, onSend, suggestions, onSuggestion }: Pr
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [interimText, setInterimText] = useState("");
   const [srSupported, setSrSupported] = useState(false);
-  const srRef = useRef<SpeechRecognition | null>(null);
+  const srRef = useRef<SRInstance | null>(null);
 
   useEffect(() => {
     setSrSupported(!!getSR());
@@ -55,7 +70,7 @@ export default function Composer({ busy, onSend, suggestions, onSuggestion }: Pr
       return;
     }
 
-    const rec = new (SR as new () => SpeechRecognition)();
+    const rec = new SR();
     rec.lang = "en-US";
     rec.interimResults = true;
     rec.continuous = false;
@@ -63,7 +78,7 @@ export default function Composer({ busy, onSend, suggestions, onSuggestion }: Pr
     srRef.current = rec;
     setVoiceState("listening");
 
-    rec.onresult = (e) => {
+    rec.onresult = (e: SpeechRecognitionResultEventLike) => {
       let interim = "";
       let final = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {

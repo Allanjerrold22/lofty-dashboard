@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { INSFORGE_API_KEY, INSFORGE_BASE_URL, insforge, isDbEnabled } from "@/lib/insforge";
+import { INSFORGE_API_KEY, INSFORGE_BASE_URL, insforgeDb, isDbEnabled } from "@/lib/insforge";
 
 export const dynamic = "force-dynamic";
 
@@ -113,7 +113,7 @@ const SEED_TRANSACTIONS = [
   { address: "204 Maple St, Palo Alto, CA 94301", warning: "Inspection report pending", type: "caution" },
 ];
 
-async function createTable(tableName: string, columns: object[], rlsEnabled = false) {
+async function createTable(tableName: string, columns: readonly object[], rlsEnabled = false) {
   const res = await fetch(`${INSFORGE_BASE_URL}/api/database/tables`, {
     method: "POST",
     headers: {
@@ -140,28 +140,52 @@ export async function POST() {
   }
 
   // 2. Seed leads
-  const { error: leadsErr } = await insforge.database
-    .from("leads")
-    .insert(SEED_LEADS.map((l) => ({ ...l, tags: JSON.stringify(l.tags), created_at: new Date().toISOString() })));
-  results.seed_leads = leadsErr ? `error: ${leadsErr.message}` : `${SEED_LEADS.length} rows inserted`;
+  try {
+    await insforgeDb.insert(
+      "leads",
+      SEED_LEADS.map((l) => ({
+        ...l,
+        tags: JSON.stringify(l.tags),
+        created_at: new Date().toISOString(),
+      }))
+    );
+    results.seed_leads = `${SEED_LEADS.length} rows inserted`;
+  } catch (e) {
+    results.seed_leads = `error: ${(e as Error).message}`;
+  }
 
   // 3. Seed tasks
-  const { error: tasksErr } = await insforge.database
-    .from("tasks")
-    .insert(SEED_TASKS.map((t) => ({ ...t, created_at: new Date().toISOString() })));
-  results.seed_tasks = tasksErr ? `error: ${tasksErr.message}` : `${SEED_TASKS.length} rows inserted`;
+  try {
+    await insforgeDb.insert(
+      "tasks",
+      SEED_TASKS.map((t) => ({ ...t, created_at: new Date().toISOString() }))
+    );
+    results.seed_tasks = `${SEED_TASKS.length} rows inserted`;
+  } catch (e) {
+    results.seed_tasks = `error: ${(e as Error).message}`;
+  }
 
   // 4. Seed appointments
-  const { error: aptsErr } = await insforge.database
-    .from("appointments")
-    .insert(SEED_APPOINTMENTS.map((a) => ({ ...a, created_at: new Date().toISOString() })));
-  results.seed_appointments = aptsErr ? `error: ${aptsErr.message}` : `${SEED_APPOINTMENTS.length} rows inserted`;
+  try {
+    await insforgeDb.insert(
+      "appointments",
+      SEED_APPOINTMENTS.map((a) => ({ ...a, created_at: new Date().toISOString() }))
+    );
+    results.seed_appointments = `${SEED_APPOINTMENTS.length} rows inserted`;
+  } catch (e) {
+    results.seed_appointments = `error: ${(e as Error).message}`;
+  }
 
   // 5. Seed transactions
-  const { error: txErr } = await insforge.database
-    .from("transactions")
-    .insert(SEED_TRANSACTIONS.map((t) => ({ ...t, created_at: new Date().toISOString() })));
-  results.seed_transactions = txErr ? `error: ${txErr.message}` : `${SEED_TRANSACTIONS.length} rows inserted`;
+  try {
+    await insforgeDb.insert(
+      "transactions",
+      SEED_TRANSACTIONS.map((t) => ({ ...t, created_at: new Date().toISOString() }))
+    );
+    results.seed_transactions = `${SEED_TRANSACTIONS.length} rows inserted`;
+  } catch (e) {
+    results.seed_transactions = `error: ${(e as Error).message}`;
+  }
 
   return NextResponse.json({ ok: true, results });
 }
